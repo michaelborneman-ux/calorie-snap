@@ -1,0 +1,15 @@
+{
+  "name": "calorie-snap",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Photo → calorie estimate PWA, powered by Claude vision.",
+  "scripts": {
+    "dev": "vercel dev",
+    "dev:local": "node --env-file=.env.local scripts/dev-server.mjs",
+    "icons": "node scripts/generate-icons.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.105.0"
+  }
+}
