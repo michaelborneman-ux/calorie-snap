@@ -1,77 +1,84 @@
 # CalorieSnap
 
 Snap a photo of your food → get a calorie + macro estimate. Installable PWA,
-powered by Claude vision. Food log and a daily calorie goal are stored
-on-device (IndexedDB) — no accounts, no server database.
+powered by Claude vision. **No server, no backend, no accounts** — it's a static
+site that calls Claude directly from the browser using *your own* API key, which
+you enter once on the device and which is stored only there.
+
+The food log and daily calorie goal live on-device too (IndexedDB).
 
 ## How it works
 
 ```
-phone camera → downscale to ~1024px (canvas) → POST /api/analyze
-   → serverless fn calls Claude (claude-opus-4-8) with the image + a
-     structured-output schema → guaranteed-valid JSON
-   → editable estimate card → save to IndexedDB → Log totals vs daily goal
+phone camera → downscale to ~1024px (canvas)
+   → call the Anthropic API directly from the browser
+     (your on-device key + a structured-output schema)
+   → guaranteed-valid JSON → editable estimate card
+   → save to IndexedDB → Log totals vs daily goal
 ```
 
-The API key lives only in the serverless function (`api/analyze.js`), never in
-the browser.
+There's no server because there's no shared secret to hide: each person uses
+their **own** key, entered in the app's **Settings (⚙)** and kept in that
+device's local storage. The key is never in the code, never in the repo, and
+never uploaded anywhere except Anthropic's API.
 
-## Local development
+## Using it
 
-1. Install deps:
-   ```
-   npm install
-   ```
-2. Add your key — copy `.env.local.example` to `.env.local` and paste a key
-   from https://console.anthropic.com/settings/keys :
-   ```
-   ANTHROPIC_API_KEY=sk-ant-...
-   ```
-3. Run frontend + function together. Two options:
-   ```
-   npm run dev          # = vercel dev   (production-faithful; needs a Vercel login)
-   npm run dev:local    # zero-account local server on http://localhost:8127
-   ```
-   `vercel dev` serves `public/` and routes `/api/*` to the function. The
-   `dev:local` option (`scripts/dev-server.mjs`) does the same thing with a
-   plain Node server and `--env-file=.env.local`, so you can test end-to-end
-   without a Vercel account.
+1. Open the app (locally or on the deployed URL).
+2. Tap the **⚙** gear (top-right) → paste your Anthropic API key → **Save**.
+   - Get a key at https://console.anthropic.com → Settings → API Keys.
+   - Tip: set a monthly spend limit on the key under Billing for peace of mind.
+3. **Scan** tab → take/choose a food photo → **Estimate** → edit if needed →
+   **Save to log**.
+4. **Goal** tab sets a daily target; **Log** tab shows entries + progress.
 
-Icons are checked in. To regenerate them: `npm run icons`.
+## Run locally
 
-## Deploy (Vercel)
+It's a static site — serve the `public/` folder with anything:
 
 ```
-npx vercel            # first deploy / link the project
-npx vercel --prod     # production
+python -m http.server 8126 --directory public
+# then open http://localhost:8126
 ```
 
-Set `ANTHROPIC_API_KEY` as a Vercel **Environment Variable** (Project →
-Settings → Environment Variables). HTTPS is automatic — required for the camera
-and for "Add to Home Screen".
+(Regenerate the PWA icons with `npm run icons` if you change the design.)
 
-On the phone: open the production URL, take a photo end-to-end, then **Add to
-Home Screen** to install. It launches fullscreen (standalone).
+## Deploy to GitHub Pages (free, all on GitHub)
+
+A GitHub Actions workflow (`.github/workflows/deploy.yml`) publishes the
+`public/` folder to Pages on every push to `main`.
+
+1. Push to GitHub.
+2. Repo **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+3. The workflow runs and gives you a URL like
+   `https://<your-username>.github.io/calorie-snap/`.
+4. Open that URL on your phone, tap ⚙ and add your key, then **Add to Home
+   Screen** to install it (HTTPS is automatic on Pages — required for the camera
+   and install).
+
+> Note: a GitHub Pages site is publicly reachable. That's fine here — there are
+> no secrets in the code; your key only ever lives on your own device.
 
 ## Cost
 
-Each scan is one image + a small JSON response — cheap per call. To cut cost,
-change `MODEL` in `api/analyze.js` to `claude-sonnet-4-6` or
-`claude-haiku-4-5` (one line).
+Each scan is one image + a small JSON reply — fractions of a cent on
+`claude-opus-4-8`. To cut cost, change `MODEL` in `public/analyze.js` to
+`claude-sonnet-4-6` or `claude-haiku-4-5` (one line).
 
 ## Project layout
 
 ```
-public/                 static PWA (served as-is)
-  index.html            app shell + Scan / Log / Goal tabs
+public/                 the whole app (static, deployed to Pages)
+  index.html            app shell + Scan / Log / Goal tabs + Settings sheet
   styles.css            mobile-first styling
-  app.js                UI, camera capture, downscale, calls /api/analyze
-  db.js                 IndexedDB wrapper (entries + settings)
-  manifest.webmanifest  PWA metadata
-  sw.js                 service worker (offline shell cache)
+  app.js                UI, camera capture, on-device key, calls analyze.js
+  analyze.js            calls the Anthropic API directly (vision + JSON schema)
+  db.js                 IndexedDB: entries, daily goal, and the API key
+  manifest.webmanifest  PWA metadata (relative paths → works on a Pages subpath)
+  sw.js                 service worker (offline app shell)
   icons/                generated 192 / 512 / maskable icons
-api/
-  analyze.js            Vercel serverless fn: image → Claude → JSON
 scripts/
   generate-icons.js     dependency-free PNG icon generator
+.github/workflows/
+  deploy.yml            auto-publishes public/ to GitHub Pages
 ```

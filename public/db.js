@@ -95,3 +95,22 @@ export function setGoal(calories) {
     box(store.put({ key: "goal", value: calories })),
   );
 }
+
+// Anthropic API key — stored only on this device, entered by the user in
+// Settings. Never shipped in the code or sent anywhere except Anthropic's API.
+export async function getApiKey() {
+  const row = await tx(SETTINGS_STORE, "readonly", (store) =>
+    box(store.get("apiKey")),
+  );
+  return row?.value ?? null;
+}
+
+export function setApiKey(key) {
+  return tx(SETTINGS_STORE, "readwrite", (store) =>
+    box(store.put({ key: "apiKey", value: key })),
+  );
+}
+
+export function clearApiKey() {
+  return tx(SETTINGS_STORE, "readwrite", (store) => box(store.delete("apiKey")));
+}

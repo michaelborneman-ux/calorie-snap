@@ -8,13 +8,14 @@
     />
     <meta name="theme-color" content="#16a34a" />
     <title>CalorieSnap</title>
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <header class="app-header">
       <h1>CalorieSnap</h1>
+      <button id="settings-btn" class="settings-btn" aria-label="Settings">⚙</button>
     </header>
 
     <main>
@@ -104,6 +105,32 @@
       <button class="tab-btn" data-target="goal">Goal</button>
     </nav>
 
-    <script type="module" src="/app.js"></script>
+    <!-- Settings sheet: enter the on-device Anthropic API key -->
+    <div id="settings-overlay" class="overlay" hidden>
+      <div class="sheet">
+        <h2>Settings</h2>
+        <label for="key-input">Anthropic API key</label>
+        <input
+          id="key-input"
+          type="password"
+          placeholder="sk-ant-..."
+          autocomplete="off"
+          autocapitalize="off"
+          spellcheck="false"
+        />
+        <p class="hint">
+          Stored only on this device — never uploaded. Get a key at
+          console.anthropic.com → Settings → API Keys.
+        </p>
+        <p id="key-status" class="hint"></p>
+        <div class="card-actions">
+          <button type="button" id="key-clear" class="ghost-btn">Clear</button>
+          <button type="button" id="key-save" class="primary-btn">Save</button>
+        </div>
+        <button type="button" id="settings-close" class="link-btn">Close</button>
+      </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
   </body>
 </html>

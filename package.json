@@ -1,15 +1,10 @@
 {
   "name": "calorie-snap",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
-  "description": "Photo → calorie estimate PWA, powered by Claude vision.",
+  "description": "Photo → calorie estimate PWA. Static client-side app; calls Claude vision directly with an on-device API key. Hostable on GitHub Pages.",
   "scripts": {
-    "dev": "vercel dev",
-    "dev:local": "node --env-file=.env.local scripts/dev-server.mjs",
     "icons": "node scripts/generate-icons.js"
-  },
-  "dependencies": {
-    "@anthropic-ai/sdk": "^0.105.0"
   }
 }

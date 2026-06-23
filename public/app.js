@@ -4,13 +4,17 @@ import {
   deleteEntry,
   getGoal,
   setGoal,
+  getApiKey,
+  setApiKey,
+  clearApiKey,
   localDate,
-} from "/db.js";
+} from "./db.js";
+import { analyzeImage } from "./analyze.js";
 
 // ---- Service worker (offline shell) ----
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch(() => {
+    navigator.serviceWorker.register("sw.js").catch(() => {
       /* offline launch is a progressive enhancement; ignore failures */
     });
   });
@@ -18,10 +22,10 @@ if ("serviceWorker" in navigator) {
 
 const $ = (sel) => document.querySelector(sel);
 const MACROS = [
-  ["calories", "cal", 1],
-  ["protein_g", "P", 0.5],
-  ["carbs_g", "C", 0.5],
-  ["fat_g", "F", 0.5],
+  ["calories", 1],
+  ["protein_g", 0.5],
+  ["carbs_g", 0.5],
+  ["fat_g", 0.5],
 ];
 
 // ---- Tab switching ----
@@ -36,6 +40,38 @@ document.querySelectorAll(".tab-btn").forEach((btn) => {
     if (target === "log") renderLog();
     if (target === "goal") loadGoalInput();
   });
+});
+
+// ---- Settings sheet (API key) ----
+const overlay = $("#settings-overlay");
+
+async function openSettings() {
+  const key = await getApiKey();
+  $("#key-input").value = key || "";
+  $("#key-status").textContent = key
+    ? "A key is saved on this device."
+    : "No key saved yet.";
+  overlay.hidden = false;
+}
+function closeSettings() {
+  overlay.hidden = true;
+}
+
+$("#settings-btn").addEventListener("click", openSettings);
+$("#settings-close").addEventListener("click", closeSettings);
+overlay.addEventListener("click", (e) => {
+  if (e.target === overlay) closeSettings(); // tap backdrop to dismiss
+});
+$("#key-save").addEventListener("click", async () => {
+  const key = $("#key-input").value.trim();
+  if (!key) return;
+  await setApiKey(key);
+  $("#key-status").textContent = "Saved ✓";
+});
+$("#key-clear").addEventListener("click", async () => {
+  await clearApiKey();
+  $("#key-input").value = "";
+  $("#key-status").textContent = "Key cleared.";
 });
 
 // ---- Image capture + downscale ----
@@ -68,7 +104,6 @@ function downscale(file) {
       canvas.width = w;
       canvas.height = h;
       canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-      // JPEG keeps the payload small; quality 0.85 is plenty for recognition.
       const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
       resolve({ base64: dataUrl.split(",")[1], mediaType: "image/jpeg" });
     };
@@ -80,38 +115,29 @@ function downscale(file) {
   });
 }
 
-// ---- Estimate (call the serverless fn) ----
+// ---- Estimate (call Claude directly with the on-device key) ----
 $("#estimate-btn").addEventListener("click", async () => {
   if (!currentImage) return;
+
+  const apiKey = await getApiKey();
+  if (!apiKey) {
+    showStatus("Add your Anthropic API key in Settings (⚙) to analyze photos.", true);
+    openSettings();
+    return;
+  }
   if (!navigator.onLine) {
     showStatus("You're offline. Analysis needs a connection.", true);
     return;
   }
+
   showStatus('<span class="spinner"></span>Analyzing photo…');
   $("#estimate-btn").disabled = true;
   try {
-    const res = await fetch("/api/analyze", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        imageBase64: currentImage.base64,
-        mediaType: currentImage.mediaType,
-      }),
+    const data = await analyzeImage({
+      base64: currentImage.base64,
+      mediaType: currentImage.mediaType,
+      apiKey,
     });
-    // Read as text first so a non-JSON response (e.g. a 404 HTML page when the
-    // API isn't running) gives a clear message instead of a JSON parse error.
-    const raw = await res.text();
-    let data;
-    try {
-      data = JSON.parse(raw);
-    } catch {
-      throw new Error(
-        res.ok
-          ? "Unexpected response from the server."
-          : `Analysis service not reachable (HTTP ${res.status}). Run the app with \`vercel dev\` so /api/analyze is available.`,
-      );
-    }
-    if (!res.ok) throw new Error(data.error || "Analysis failed.");
     hideStatus();
     renderResult(data);
   } catch (err) {
@@ -157,7 +183,7 @@ function itemRow(item = {}) {
 
   const macros = document.createElement("div");
   macros.className = "macros";
-  MACROS.forEach(([key, , step]) => {
+  MACROS.forEach(([key, step]) => {
     const label = document.createElement("label");
     label.textContent = labelFor(key);
     const input = document.createElement("input");
@@ -232,7 +258,6 @@ $("#result-card").addEventListener("submit", async (e) => {
     },
   });
   resetScan();
-  // Jump to the Log so the user sees it landed.
   document.querySelector('.tab-btn[data-target="log"]').click();
 });
 
@@ -354,4 +379,9 @@ $("#goal-form").addEventListener("submit", async (e) => {
   if (!Number.isFinite(value) || value <= 0) return;
   await setGoal(Math.round(value));
   $("#goal-saved").hidden = false;
+});
+
+// Prompt for a key on first run if none is stored yet.
+getApiKey().then((key) => {
+  if (!key) openSettings();
 });

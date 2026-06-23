@@ -38,6 +38,7 @@ body {
 }
 
 .app-header {
+  position: relative;
   padding: env(safe-area-inset-top) 16px 0;
   background: var(--green);
   color: #fff;
@@ -48,6 +49,64 @@ body {
   font-size: 20px;
   text-align: center;
   letter-spacing: 0.3px;
+}
+.settings-btn {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  padding: 6px;
+  cursor: pointer;
+}
+
+/* Settings sheet */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 10;
+}
+.sheet {
+  width: 100%;
+  max-width: 420px;
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.sheet h2 {
+  margin: 0 0 14px;
+  font-size: 18px;
+}
+.sheet label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.hint {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.sheet .card-actions {
+  margin-top: 16px;
+}
+.link-btn {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 6px;
 }
 
 main {
