@@ -345,6 +345,63 @@ input:focus {
   color: var(--muted);
 }
 
+/* Daily macro roll-up on the Log tab */
+.macro-summary {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.macro-row {
+  font-size: 13px;
+}
+.macro-row-head {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.macro-row-head strong {
+  color: var(--text);
+  font-weight: 600;
+}
+.macro-bar {
+  height: 8px;
+  background: var(--bg);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.macro-fill {
+  height: 100%;
+  width: 0;
+  background: var(--green);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+.macro-fill.over {
+  background: var(--danger);
+}
+
+/* Macro goal inputs on the Goal tab */
+.goal-section {
+  margin: 4px 0 8px;
+  font-weight: 600;
+  font-size: 14px;
+}
+.goal-macros {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.goal-macros label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
 .log-list {
   display: flex;
   flex-direction: column;

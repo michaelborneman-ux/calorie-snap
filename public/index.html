@@ -74,6 +74,7 @@
             <div id="goal-fill" class="goal-fill"></div>
           </div>
           <p id="goal-summary" class="goal-summary"></p>
+          <div id="macro-summary" class="macro-summary"></div>
         </div>
         <div id="log-list" class="log-list"></div>
         <p id="log-empty" class="empty" hidden>
@@ -93,7 +94,24 @@
             step="50"
             placeholder="e.g. 2000"
           />
-          <button type="submit" class="primary-btn">Save goal</button>
+
+          <p class="goal-section">Macro goals (grams, optional)</p>
+          <div class="goal-macros">
+            <label
+              >Protein
+              <input id="goal-protein" type="number" inputmode="numeric" min="0" step="5" placeholder="g" />
+            </label>
+            <label
+              >Carbs
+              <input id="goal-carbs" type="number" inputmode="numeric" min="0" step="5" placeholder="g" />
+            </label>
+            <label
+              >Fat
+              <input id="goal-fat" type="number" inputmode="numeric" min="0" step="5" placeholder="g" />
+            </label>
+          </div>
+
+          <button type="submit" class="primary-btn">Save goals</button>
           <p id="goal-saved" class="saved-msg" hidden>Saved ✓</p>
         </form>
       </section>

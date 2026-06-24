@@ -4,6 +4,8 @@ import {
   deleteEntry,
   getGoal,
   setGoal,
+  getMacroGoals,
+  setMacroGoals,
   getApiKey,
   setApiKey,
   clearApiKey,
@@ -290,13 +292,24 @@ function hideStatus() {
 // ---- Log tab ----
 async function renderLog() {
   const today = localDate();
-  const [entries, goal] = await Promise.all([
+  const [entries, goal, macroGoals] = await Promise.all([
     getEntriesByDate(today),
     getGoal(),
+    getMacroGoals(),
   ]);
 
   const consumed = entries.reduce((sum, e) => sum + (e.totals.calories || 0), 0);
+  const consumedMacros = entries.reduce(
+    (acc, e) => {
+      acc.protein_g += e.totals.protein_g || 0;
+      acc.carbs_g += e.totals.carbs_g || 0;
+      acc.fat_g += e.totals.fat_g || 0;
+      return acc;
+    },
+    { protein_g: 0, carbs_g: 0, fat_g: 0 },
+  );
   renderGoalBanner(consumed, goal);
+  renderMacroSummary(consumedMacros, macroGoals);
 
   const list = $("#log-list");
   list.innerHTML = "";
@@ -321,6 +334,44 @@ function renderGoalBanner(consumed, goal) {
     remaining >= 0
       ? `${consumed} / ${goal} cal · ${remaining} remaining`
       : `${consumed} / ${goal} cal · ${Math.abs(remaining)} over`;
+}
+
+function renderMacroSummary(consumed, goals) {
+  const container = $("#macro-summary");
+  container.innerHTML = "";
+  const defs = [
+    ["protein_g", "Protein"],
+    ["carbs_g", "Carbs"],
+    ["fat_g", "Fat"],
+  ];
+  defs.forEach(([key, label]) => {
+    const have = round1(consumed[key]);
+    const goal = goals?.[key];
+
+    const row = document.createElement("div");
+    row.className = "macro-row";
+
+    const head = document.createElement("div");
+    head.className = "macro-row-head";
+    const name = document.createElement("span");
+    name.textContent = label;
+    const val = document.createElement("strong");
+    val.textContent = goal ? `${have} / ${goal} g` : `${have} g`;
+    head.append(name, val);
+    row.appendChild(head);
+
+    if (goal) {
+      const bar = document.createElement("div");
+      bar.className = "macro-bar";
+      const fill = document.createElement("div");
+      fill.className = "macro-fill";
+      fill.style.width = `${Math.min(100, (have / goal) * 100)}%`;
+      if (have > goal) fill.classList.add("over");
+      bar.appendChild(fill);
+      row.appendChild(bar);
+    }
+    container.appendChild(row);
+  });
 }
 
 function logEntry(entry) {
@@ -368,16 +419,31 @@ function logEntry(entry) {
 
 // ---- Goal tab ----
 async function loadGoalInput() {
-  const goal = await getGoal();
+  const [goal, macroGoals] = await Promise.all([getGoal(), getMacroGoals()]);
   $("#goal-input").value = goal ?? "";
+  $("#goal-protein").value = macroGoals?.protein_g ?? "";
+  $("#goal-carbs").value = macroGoals?.carbs_g ?? "";
+  $("#goal-fat").value = macroGoals?.fat_g ?? "";
   $("#goal-saved").hidden = true;
 }
 
 $("#goal-form").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const value = Number($("#goal-input").value);
-  if (!Number.isFinite(value) || value <= 0) return;
-  await setGoal(Math.round(value));
+  const cal = Number($("#goal-input").value);
+  if (Number.isFinite(cal) && cal > 0) await setGoal(Math.round(cal));
+
+  // Save each positive macro goal; blanks/zero are left unset.
+  const macros = {};
+  for (const [id, key] of [
+    ["#goal-protein", "protein_g"],
+    ["#goal-carbs", "carbs_g"],
+    ["#goal-fat", "fat_g"],
+  ]) {
+    const v = Number($(id).value);
+    if (Number.isFinite(v) && v > 0) macros[key] = Math.round(v);
+  }
+  await setMacroGoals(macros);
+
   $("#goal-saved").hidden = false;
 });
 

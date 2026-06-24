@@ -96,6 +96,21 @@ export function setGoal(calories) {
   );
 }
 
+// Daily macro goals (grams): { protein_g, carbs_g, fat_g }. Any field may be
+// null/absent if the user hasn't set that one.
+export async function getMacroGoals() {
+  const row = await tx(SETTINGS_STORE, "readonly", (store) =>
+    box(store.get("macroGoals")),
+  );
+  return row?.value ?? {};
+}
+
+export function setMacroGoals(goals) {
+  return tx(SETTINGS_STORE, "readwrite", (store) =>
+    box(store.put({ key: "macroGoals", value: goals })),
+  );
+}
+
 // Anthropic API key — stored only on this device, entered by the user in
 // Settings. Never shipped in the code or sent anywhere except Anthropic's API.
 export async function getApiKey() {
