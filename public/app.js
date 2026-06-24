@@ -6,6 +6,8 @@ import {
   setGoal,
   getMacroGoals,
   setMacroGoals,
+  getProfile,
+  setProfile,
   getApiKey,
   setApiKey,
   clearApiKey,
@@ -418,12 +420,51 @@ function logEntry(entry) {
 }
 
 // ---- Goal tab ----
+// Preset profiles: each sets a calorie target + macro split (grams). Starting
+// points the user can fine-tune; not medical advice.
+const PROFILES = {
+  training: { calories: 2600, protein_g: 180, carbs_g: 300, fat_g: 75 },
+  loss: { calories: 1700, protein_g: 150, carbs_g: 130, fat_g: 60 },
+  balanced: { calories: 2000, protein_g: 120, carbs_g: 225, fat_g: 65 },
+};
+
+function markActiveProfile(key) {
+  document.querySelectorAll(".profile-btn").forEach((b) => {
+    b.classList.toggle("active", b.dataset.profile === key);
+  });
+}
+
+async function applyProfile(key) {
+  const p = PROFILES[key];
+  if (!p) return;
+  $("#goal-input").value = p.calories;
+  $("#goal-protein").value = p.protein_g;
+  $("#goal-carbs").value = p.carbs_g;
+  $("#goal-fat").value = p.fat_g;
+  await Promise.all([
+    setGoal(p.calories),
+    setMacroGoals({ protein_g: p.protein_g, carbs_g: p.carbs_g, fat_g: p.fat_g }),
+    setProfile(key),
+  ]);
+  markActiveProfile(key);
+  $("#goal-saved").hidden = false;
+}
+
+document.querySelectorAll(".profile-btn").forEach((btn) => {
+  btn.addEventListener("click", () => applyProfile(btn.dataset.profile));
+});
+
 async function loadGoalInput() {
-  const [goal, macroGoals] = await Promise.all([getGoal(), getMacroGoals()]);
+  const [goal, macroGoals, profile] = await Promise.all([
+    getGoal(),
+    getMacroGoals(),
+    getProfile(),
+  ]);
   $("#goal-input").value = goal ?? "";
   $("#goal-protein").value = macroGoals?.protein_g ?? "";
   $("#goal-carbs").value = macroGoals?.carbs_g ?? "";
   $("#goal-fat").value = macroGoals?.fat_g ?? "";
+  markActiveProfile(profile);
   $("#goal-saved").hidden = true;
 }
 
@@ -443,6 +484,10 @@ $("#goal-form").addEventListener("submit", async (e) => {
     if (Number.isFinite(v) && v > 0) macros[key] = Math.round(v);
   }
   await setMacroGoals(macros);
+
+  // Manually saving custom values clears the active profile selection.
+  await setProfile(null);
+  markActiveProfile(null);
 
   $("#goal-saved").hidden = false;
 });

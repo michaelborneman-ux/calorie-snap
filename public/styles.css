@@ -382,6 +382,29 @@ input:focus {
   background: var(--danger);
 }
 
+/* Profile presets on the Goal tab */
+.profiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.profile-btn {
+  padding: 14px 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1.2;
+}
+.profile-btn.active {
+  background: var(--green);
+  color: #fff;
+  border-color: var(--green);
+}
+
 /* Macro goal inputs on the Goal tab */
 .goal-section {
   margin: 4px 0 8px;

@@ -111,6 +111,21 @@ export function setMacroGoals(goals) {
   );
 }
 
+// Selected goal profile (e.g. "training" | "loss" | "balanced"), or null when
+// the user has manually customized their goals.
+export async function getProfile() {
+  const row = await tx(SETTINGS_STORE, "readonly", (store) =>
+    box(store.get("profile")),
+  );
+  return row?.value ?? null;
+}
+
+export function setProfile(name) {
+  return tx(SETTINGS_STORE, "readwrite", (store) =>
+    box(store.put({ key: "profile", value: name })),
+  );
+}
+
 // Anthropic API key — stored only on this device, entered by the user in
 // Settings. Never shipped in the code or sent anywhere except Anthropic's API.
 export async function getApiKey() {
