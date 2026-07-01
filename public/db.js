@@ -73,6 +73,12 @@ export async function addEntry(entry) {
   return record;
 }
 
+export function getAllEntries() {
+  return tx(ENTRIES_STORE, "readonly", (store) => box(store.getAll())).then(
+    (entries) => entries.sort((a, b) => a.createdAt - b.createdAt),
+  );
+}
+
 export function getEntriesByDate(date) {
   return tx(ENTRIES_STORE, "readonly", (store) =>
     box(store.index("date").getAll(date)),

@@ -1,5 +1,6 @@
 import {
   addEntry,
+  getAllEntries,
   getEntriesByDate,
   deleteEntry,
   getGoal,
@@ -76,6 +77,50 @@ $("#key-clear").addEventListener("click", async () => {
   await clearApiKey();
   $("#key-input").value = "";
   $("#key-status").textContent = "Key cleared.";
+});
+
+// ---- Data export (for the desktop health dashboard) ----
+$("#export-btn").addEventListener("click", async () => {
+  const status = $("#export-status");
+  status.textContent = "Preparing export…";
+  try {
+    const [entries, goal, macroGoals, profile] = await Promise.all([
+      getAllEntries(),
+      getGoal(),
+      getMacroGoals(),
+      getProfile(),
+    ]);
+    const payload = {
+      app: "calorie-snap",
+      schema: 1,
+      exportedAt: new Date().toISOString(),
+      goal,
+      macroGoals,
+      profile,
+      entries,
+    };
+    const name = `caloriesnap-export-${localDate()}.json`;
+    const file = new File([JSON.stringify(payload, null, 2)], name, {
+      type: "application/json",
+    });
+    if (navigator.canShare?.({ files: [file] })) {
+      await navigator.share({ files: [file] });
+      status.textContent = "Shared ✓";
+    } else {
+      // Desktop browsers without the share sheet: download the file instead.
+      const url = URL.createObjectURL(file);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      a.click();
+      URL.revokeObjectURL(url);
+      status.textContent = "Downloaded ✓";
+    }
+  } catch (err) {
+    // Cancelling the share sheet is not an error worth reporting.
+    status.textContent =
+      err?.name === "AbortError" ? "" : "Export failed. Try again.";
+  }
 });
 
 // ---- Image capture + downscale ----

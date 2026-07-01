@@ -98,6 +98,15 @@ body {
 .sheet .card-actions {
   margin-top: 16px;
 }
+.sheet-section {
+  margin: 22px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.sheet .ghost-btn {
+  width: 100%;
+  margin-top: 12px;
+}
 .link-btn {
   display: block;
   width: 100%;
