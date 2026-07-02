@@ -162,6 +162,28 @@
           <button type="button" id="key-clear" class="ghost-btn">Clear</button>
           <button type="button" id="key-save" class="primary-btn">Save</button>
         </div>
+        <h2 class="sheet-section">Dashboard sync</h2>
+        <label for="gh-token-input">GitHub token (gist scope)</label>
+        <input
+          id="gh-token-input"
+          type="password"
+          placeholder="ghp_... or github_pat_..."
+          autocomplete="off"
+          autocapitalize="off"
+          spellcheck="false"
+        />
+        <p class="hint">
+          Auto-publishes your daily calorie totals (no meal details) to a
+          secret Gist the desktop dashboard reads. Create a token at
+          github.com/settings/tokens → "Generate new token (classic)" with
+          only the <strong>gist</strong> scope.
+        </p>
+        <p id="gh-status" class="hint"></p>
+        <div class="card-actions">
+          <button type="button" id="gh-token-clear" class="ghost-btn">Clear</button>
+          <button type="button" id="gh-sync-now" class="ghost-btn">Sync now</button>
+          <button type="button" id="gh-token-save" class="primary-btn">Save</button>
+        </div>
         <h2 class="sheet-section">Your data</h2>
         <p class="hint">
           Export every logged meal and your goals as a JSON file — save it to

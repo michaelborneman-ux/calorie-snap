@@ -1,7 +1,7 @@
 // Service worker: cache the app shell for offline launch.
 // Relative URLs so it works whether served from the domain root (local) or a
 // project subpath (GitHub Pages). Bump CACHE on any shell change.
-const CACHE = "calorie-snap-v5";
+const CACHE = "calorie-snap-v6";
 const SHELL = [
   "./",
   "./index.html",
@@ -9,6 +9,7 @@ const SHELL = [
   "./app.js",
   "./db.js",
   "./analyze.js",
+  "./sync.js",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",

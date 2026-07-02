@@ -150,3 +150,38 @@ export function setApiKey(key) {
 export function clearApiKey() {
   return tx(SETTINGS_STORE, "readwrite", (store) => box(store.delete("apiKey")));
 }
+
+// GitHub token (gist scope only) + the id of the summary gist — used by
+// sync.js to publish daily totals for the desktop health dashboard. The
+// token stays on this device, like the Anthropic key.
+export async function getGithubToken() {
+  const row = await tx(SETTINGS_STORE, "readonly", (store) =>
+    box(store.get("githubToken")),
+  );
+  return row?.value ?? null;
+}
+
+export function setGithubToken(token) {
+  return tx(SETTINGS_STORE, "readwrite", (store) =>
+    box(store.put({ key: "githubToken", value: token })),
+  );
+}
+
+export function clearGithubToken() {
+  return tx(SETTINGS_STORE, "readwrite", (store) =>
+    box(store.delete("githubToken")),
+  );
+}
+
+export async function getGistId() {
+  const row = await tx(SETTINGS_STORE, "readonly", (store) =>
+    box(store.get("gistId")),
+  );
+  return row?.value ?? null;
+}
+
+export function setGistId(id) {
+  return tx(SETTINGS_STORE, "readwrite", (store) =>
+    box(store.put({ key: "gistId", value: id })),
+  );
+}

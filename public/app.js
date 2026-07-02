@@ -12,9 +12,14 @@ import {
   getApiKey,
   setApiKey,
   clearApiKey,
+  getGithubToken,
+  setGithubToken,
+  clearGithubToken,
+  getGistId,
   localDate,
 } from "./db.js";
 import { analyzeImage } from "./analyze.js";
+import { syncNow, scheduleSync } from "./sync.js";
 
 // ---- Service worker (offline shell) ----
 if ("serviceWorker" in navigator) {
@@ -51,11 +56,21 @@ document.querySelectorAll(".tab-btn").forEach((btn) => {
 const overlay = $("#settings-overlay");
 
 async function openSettings() {
-  const key = await getApiKey();
+  const [key, ghToken, gistId] = await Promise.all([
+    getApiKey(),
+    getGithubToken(),
+    getGistId(),
+  ]);
   $("#key-input").value = key || "";
   $("#key-status").textContent = key
     ? "A key is saved on this device."
     : "No key saved yet.";
+  $("#gh-token-input").value = ghToken || "";
+  $("#gh-status").textContent = ghToken
+    ? gistId
+      ? `Syncing to gist ${gistId}`
+      : "Token saved — will sync after your next log."
+    : "No token saved yet.";
   overlay.hidden = false;
 }
 function closeSettings() {
@@ -77,6 +92,36 @@ $("#key-clear").addEventListener("click", async () => {
   await clearApiKey();
   $("#key-input").value = "";
   $("#key-status").textContent = "Key cleared.";
+});
+
+// ---- Dashboard sync (GitHub gist) ----
+$("#gh-token-save").addEventListener("click", async () => {
+  const token = $("#gh-token-input").value.trim();
+  if (!token) return;
+  await setGithubToken(token);
+  $("#gh-status").textContent = "Saved — running first sync…";
+  try {
+    const res = await syncNow();
+    $("#gh-status").textContent = `Synced ✓ (gist ${res.id})`;
+  } catch (err) {
+    $("#gh-status").textContent = `Sync failed: ${err.message}`;
+  }
+});
+$("#gh-token-clear").addEventListener("click", async () => {
+  await clearGithubToken();
+  $("#gh-token-input").value = "";
+  $("#gh-status").textContent = "Token cleared — sync disabled.";
+});
+$("#gh-sync-now").addEventListener("click", async () => {
+  $("#gh-status").textContent = "Syncing…";
+  try {
+    const res = await syncNow();
+    $("#gh-status").textContent = res.skipped
+      ? `Skipped: ${res.skipped}`
+      : `Synced ✓ (gist ${res.id})`;
+  } catch (err) {
+    $("#gh-status").textContent = `Sync failed: ${err.message}`;
+  }
 });
 
 // ---- Data export (for the desktop health dashboard) ----
@@ -306,6 +351,7 @@ $("#result-card").addEventListener("submit", async (e) => {
       fat_g: round1(totals.fat_g),
     },
   });
+  scheduleSync();
   resetScan();
   document.querySelector('.tab-btn[data-target="log"]').click();
 });
@@ -457,6 +503,7 @@ function logEntry(entry) {
   del.textContent = "Delete";
   del.addEventListener("click", async () => {
     await deleteEntry(entry.id);
+    scheduleSync();
     renderLog();
   });
   wrap.appendChild(del);
@@ -541,3 +588,7 @@ $("#goal-form").addEventListener("submit", async (e) => {
 getApiKey().then((key) => {
   if (!key) openSettings();
 });
+
+// Push a fresh summary on launch so the dashboard catches edits made while
+// offline (no-op when no GitHub token is saved).
+scheduleSync();
